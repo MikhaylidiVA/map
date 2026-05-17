@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ПРПП — Парковочное пространство</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #0b0b12;
+            --bg-surface: #12121e;
+            --bg-card: #1a1a2e;
+            --bg-input: #16162a;
+            --border: rgba(255,255,255,0.06);
+            --border-hover: rgba(255,255,255,0.12);
+            --text: #ffffff;
+            --text-secondary: #8888a8;
+            --text-muted: #55556a;
+            --accent-blue: #4facfe;
+            --accent-blue-dark: #3178e6;
+            --accent-purple: #7c5ce7;
+            --accent-green: #00e096;
+            --accent-orange: #ff9f43;
+            --accent-red: #ff6b6b;
+            --gradient-blue: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --gradient-purple: linear-gradient(135deg, #7c5ce7 0%, #a29bfe 100%);
+            --gradient-green: linear-gradient(135deg, #00e096 0%, #55efc4 100%);
+            --radius-sm: 10px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+        }
+
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        .page { display: none; min-height: 100vh; position: relative; }
+        .page.active { display: flex; flex-direction: column; }
+
+        /* AUTH PAGE */
+        .auth-page { align-items: center; justify-content: center; padding: 40px 24px; }
+        .auth-container { width: 100%; max-width: 440px; position: relative; z-index: 2; }
+        .auth-logo { text-align: center; margin-bottom: 48px; }
+        .auth-logo-icon {
+            width: 72px; height: 72px; background: var(--gradient-blue); border-radius: 20px;
+            display: inline-flex; align-items: center; justify-content: center; font-size: 2rem;
+            margin-bottom: 20px; animation: logoFloat 3s ease-in-out infinite;
+            box-shadow: 0 12px 40px rgba(79, 172, 254, 0.3);
+        }
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-6px) rotate(3deg); }
+        }
+        .auth-logo h1 { font-family: 'Space Grotesk', sans-serif; font-size: 1.8rem; font-weight: 700; }
+        .auth-logo p { color: var(--text-secondary); font-size: 0.9rem; margin-top: 8px; }
+        .auth-card { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 40px; backdrop-filter: blur(20px); }
+        .auth-card h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.4rem; font-weight: 600; margin-bottom: 8px; }
+        .auth-card .auth-subtitle { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 32px; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-label { display: block; font-size: 0.82rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 8px; letter-spacing: 0.3px; }
+        .form-input {
+            width: 100%; padding: 14px 18px; background: var(--bg-input); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); color: var(--text); font-size: 0.95rem; font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease; outline: none;
+        }
+        .form-input:focus { border-color: var(--accent-blue); box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.15); }
+        .form-input::placeholder { color: var(--text-muted); }
+        .form-textarea { min-height: 100px; resize: vertical; font-family: 'Inter', sans-serif; }
+        
+        .btn { width: 100%; padding: 15px 28px; border: none; border-radius: var(--radius-sm); font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-family: 'Inter', sans-serif; position: relative; overflow: hidden; }
+        .btn-primary { background: var(--gradient-blue); color: white; }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(79, 172, 254, 0.4); }
+        .btn-primary:active { transform: translateY(0); }
+        .btn-danger { background: rgba(255, 107, 107, 0.15); color: var(--accent-red); border: 1px solid rgba(255, 107, 107, 0.2); }
+        .btn-danger:hover { background: rgba(255, 107, 107, 0.25); }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn-outline:hover { border-color: var(--accent-blue); background: rgba(79, 172, 254, 0.08); }
+        .btn-sm { width: auto; padding: 10px 20px; font-size: 0.85rem; }
+        
+        .auth-error { background: rgba(255, 107, 107, 0.1); border: 1px solid rgba(255, 107, 107, 0.2); border-radius: var(--radius-sm); padding: 12px 16px; color: var(--accent-red); font-size: 0.85rem; margin-bottom: 20px; display: none; align-items: center; gap: 8px; }
+        .auth-error.show { display: flex; }
+
+        /* DASHBOARD */
+        .dashboard-page { min-height: 100vh; }
+        .topbar { display: flex; align-items: center; justify-content: space-between; padding: 20px 48px; border-bottom: 1px solid var(--border); background: rgba(11, 11, 18, 0.8); backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 100; }
+        .topbar-left { display: flex; align-items: center; gap: 16px; }
+        .topbar-logo { width: 40px; height: 40px; background: var(--gradient-blue); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .topbar-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; font-weight: 700; }
+        .topbar-right { display: flex; align-items: center; gap: 16px; }
+        .topbar-user { display: flex; align-items: center; gap: 12px; padding: 8px 16px; background: var(--bg-card); border-radius: 50px; border: 1px solid var(--border); }
+        .topbar-avatar { width: 32px; height: 32px; background: var(--gradient-purple); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; }
+        .topbar-username { font-size: 0.85rem; font-weight: 500; }
+        .topbar-btn { width: 40px; height: 40px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; color: var(--text-secondary); cursor: pointer; transition: all 0.3s ease; font-size: 1.1rem; }
+        .topbar-btn:hover { border-color: var(--accent-blue); color: var(--text); }
+        .topbar-btn.logout-btn:hover { border-color: var(--accent-red); color: var(--accent-red); }
+        
+        .dashboard-content { flex: 1; padding: 60px 48px; display: flex; flex-direction: column; align-items: center; }
+        .dashboard-welcome { text-align: center; margin-bottom: 64px; max-width: 600px; }
+        .dashboard-welcome h1 { font-family: 'Space Grotesk', sans-serif; font-size: clamp(1.8rem, 3vw, 2.6rem); font-weight: 800; margin-bottom: 12px; }
+        .dashboard-welcome h1 .highlight { background: var(--gradient-blue); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .dashboard-welcome p { color: var(--text-secondary); font-size: 1.05rem; }
+        .cards-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 32px; max-width: 1000px; width: 100%; }
+        
+        .choice-card {
+            background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 48px 40px;
+            cursor: pointer; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden;
+            text-decoration: none; color: inherit; display: flex; flex-direction: column; min-height: 320px;
+        }
+        .choice-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: var(--gradient-blue); transform: scaleX(0); transform-origin: left; transition: transform 0.4s ease; }
+        .choice-card:nth-child(2)::before { background: var(--gradient-purple); }
+        .choice-card:hover::before { transform: scaleX(1); }
+        .choice-card:hover { transform: translateY(-8px); border-color: var(--border-hover); box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3); }
+        .choice-card-bg { position: absolute; top: -50px; right: -50px; width: 200px; height: 200px; border-radius: 50%; filter: blur(80px); opacity: 0.15; transition: opacity 0.4s ease; }
+        .choice-card:nth-child(1) .choice-card-bg { background: var(--accent-blue); }
+        .choice-card:nth-child(2) .choice-card-bg { background: var(--accent-purple); }
+        .choice-card:hover .choice-card-bg { opacity: 0.25; }
+        .choice-card-icon { width: 64px; height: 64px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin-bottom: 28px; position: relative; z-index: 1; transition: transform 0.3s ease; background: rgba(79, 172, 254, 0.12); }
+        .choice-card:nth-child(2) .choice-card-icon { background: rgba(124, 92, 231, 0.12); }
+        .choice-card:hover .choice-card-icon { transform: scale(1.1) rotate(5deg); }
+        .choice-card-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.4rem; font-weight: 700; margin-bottom: 12px; position: relative; z-index: 1; }
+        .choice-card-desc { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.7; position: relative; z-index: 1; flex: 1; }
+        .choice-card-link { display: inline-flex; align-items: center; gap: 10px; color: var(--accent-blue); font-size: 0.9rem; font-weight: 600; margin-top: 24px; position: relative; z-index: 1; transition: gap 0.3s ease; }
+        .choice-card:nth-child(2) .choice-card-link { color: var(--accent-purple); }
+        .choice-card:hover .choice-card-link { gap: 16px; }
+        .choice-card-arrow { transition: transform 0.3s ease; }
+        .choice-card:hover .choice-card-arrow { transform: translateX(4px); }
+        .choice-card-url { font-size: 0.8rem; color: var(--text-muted); margin-top: 8px; position: relative; z-index: 1; }
+
+        /* ADMIN */
+        .admin-page { min-height: 100vh; }
+        .admin-layout { display: flex; flex: 1; }
+        .admin-sidebar { width: 260px; background: var(--bg-surface); border-right: 1px solid var(--border); padding: 24px 16px; display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; }
+        .admin-sidebar-logo { display: flex; align-items: center; gap: 12px; padding: 0 8px; margin-bottom: 32px; }
+        .admin-sidebar-logo .topbar-logo { width: 36px; height: 36px; font-size: 1rem; }
+        .admin-sidebar-logo span { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1rem; }
+        .admin-nav { list-style: none; display: flex; flex-direction: column; gap: 4px; flex: 1; }
+        .admin-nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--radius-sm); color: var(--text-secondary); cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem; font-weight: 500; border: none; background: none; width: 100%; text-align: left; font-family: 'Inter', sans-serif; }
+        .admin-nav-item:hover { background: rgba(79, 172, 254, 0.08); color: var(--text); }
+        .admin-nav-item.active { background: rgba(79, 172, 254, 0.12); color: var(--accent-blue); }
+        .admin-nav-item .nav-icon { font-size: 1.1rem; }
+        .admin-main { flex: 1; padding: 40px 48px; overflow-y: auto; max-height: 100vh; }
+        .admin-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; }
+        .admin-header h2 { font-family: 'Space Grotesk', sans-serif; font-size: 1.6rem; font-weight: 700; }
+        .admin-header p { color: var(--text-secondary); font-size: 0.9rem; margin-top: 4px; }
+        .admin-stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 24px; }
+        .admin-stat-card .stat-label { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
+        .admin-stat-card .stat-value { font-family: 'Space Grotesk', sans-serif; font-size: 2rem; font-weight: 700; }
+        .admin-stat-card .stat-change { font-size: 0.8rem; margin-top: 4px; }
+        .stat-change.positive { color: var(--accent-green); }
+        .stat-change.negative { color: var(--accent-red); }
+        .admin-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .admin-section { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 32px; margin-bottom: 24px; }
+        .admin-section-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.1rem; font-weight: 600; margin-bottom: 24px; display: flex; align-items: center; gap: 10px; }
+        .admin-section-title .icon { font-size: 1.2rem; }
+        .admin-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .admin-form-full { grid-column: span 2; }
+        .admin-form-actions { display: flex; gap: 12px; margin-top: 24px; }
+        .admin-table { width: 100%; border-collapse: collapse; }
+        .admin-table th { text-align: left; padding: 12px 16px; font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; border-bottom: 1px solid var(--border); }
+        .admin-table td { padding: 14px 16px; font-size: 0.9rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        .admin-table tr:last-child td { border-bottom: none; }
+        .admin-table tr:hover td { background: rgba(79, 172, 254, 0.04); }
+        .user-badge { display: inline-flex; align-items: center; gap: 10px; }
+        .user-badge-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; }
+        .status-badge { padding: 4px 12px; border-radius: 50px; font-size: 0.75rem; font-weight: 600; }
+        .status-active { background: rgba(0, 224, 150, 0.12); color: var(--accent-green); }
+        .status-inactive { background: rgba(255, 107, 107, 0.12); color: var(--accent-red); }
+        .role-badge { padding: 4px 10px; border-radius: 50px; font-size: 0.75rem; font-weight: 500; background: rgba(124, 92, 231, 0.12); color: var(--accent-purple); }
+        .role-badge.admin-role { background: rgba(255, 159, 67, 0.12); color: var(--accent-orange); }
+        .toggle-wrap { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .toggle { width: 48px; height: 26px; background: var(--bg-input); border: 1px solid var(--border); border-radius: 50px; position: relative; transition: all 0.3s ease; }
+        .toggle.active { background: rgba(79, 172, 254, 0.3); border-color: var(--accent-blue); }
+        .toggle::after { content: ''; width: 20px; height: 20px; background: var(--text-secondary); border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: all 0.3s ease; }
+        .toggle.active::after { left: 24px; background: var(--accent-blue); }
+        .toggle-label { font-size: 0.85rem; color: var(--text-secondary); }
+        .activity-list { display: flex; flex-direction: column; gap: 16px; }
+        .activity-item { display: flex; align-items: flex-start; gap: 14px; padding: 16px; background: var(--bg-card); border-radius: var(--radius-sm); border: 1px solid var(--border); }
+        .activity-dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+        .activity-dot.blue { background: var(--accent-blue); }
+        .activity-dot.green { background: var(--accent-green); }
+        .activity-dot.purple { background: var(--accent-purple); }
+        .activity-dot.orange { background: var(--accent-orange); }
+        .activity-text { font-size: 0.88rem; color: var(--text-secondary); }
+        .activity-text strong { color: var(--text); }
+        .activity-time { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+        .admin-tab-panel { display: none; }
+        .admin-tab-panel.active { display: block; }
+
+        /* TOAST & MODAL */
+        .toast { position: fixed; bottom: 30px; right: 30px; padding: 16px 28px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); color: var(--text); font-size: 0.9rem; z-index: 10000; display: flex; align-items: center; gap: 12px; transform: translateY(100px); opacity: 0; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4); }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast.success { border-color: rgba(0, 224, 150, 0.3); }
+        .toast.error { border-color: rgba(255, 107, 107, 0.3); }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); z-index: 5000; display: none; align-items: center; justify-content: center; padding: 24px; }
+        .modal-overlay.show { display: flex; }
+        .modal { background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 40px; width: 100%; max-width: 480px; animation: modalIn 0.3s ease; }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .modal-title { font-family: 'Space Grotesk', sans-serif; font-size: 1.3rem; font-weight: 600; margin-bottom: 8px; }
+        .modal-desc { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 28px; }
+        .modal-actions { display: flex; gap: 12px; justify-content: flex-end; }
+
+        /* LOADER & BG */
+        #particles-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0.3; }
+        .page-content { position: relative; z-index: 1; }
+        .page-loader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); z-index: 9999; display: flex; align-items: center; justify-content: center; flex-direction: column; transition: opacity 0.5s ease, visibility 0.5s ease; }
+        .page-loader.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+        .loader-spinner { width: 48px; height: 48px; border: 3px solid var(--border); border-top-color: var(--accent-blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader-text { margin-top: 20px; font-size: 0.9rem; color: var(--text-muted); }
+        .auth-orb { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.15; }
+        .auth-orb-1 { width: 400px; height: 400px; background: var(--accent-blue); top: -100px; left: -100px; animation: orbFloat 8s ease-in-out infinite; }
+        .auth-orb-2 { width: 300px; height: 300px; background: var(--accent-purple); bottom: -80px; right: -80px; animation: orbFloat 8s ease-in-out infinite reverse; }
+        @keyframes orbFloat { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(30px, -20px); } }
+        .fade-in { animation: fadeIn 0.5s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .fade-in-delay-1 { animation-delay: 0.1s; opacity: 0; }
+        .fade-in-delay-2 { animation-delay: 0.2s; opacity: 0; }
+        .fade-in-delay-3 { animation-delay: 0.3s; opacity: 0; }
+
+        @media (max-width: 1024px) { .admin-sidebar { display: none; } .admin-main { padding: 32px 24px; } }
+        @media (max-width: 768px) { .topbar { padding: 16px 20px; } .dashboard-content { padding: 40px 20px; } .cards-grid { grid-template-columns: 1fr; gap: 20px; } .choice-card { padding: 32px 28px; min-height: 260px; } .admin-form-grid { grid-template-columns: 1fr; } .admin-form-full { grid-column: span 1; } .auth-card { padding: 28px; } .topbar-username { display: none; } .admin-header { flex-direction: column; align-items: flex-start; gap: 16px; } }
+    </style>
+</head>
+<body>
+    <!-- Page Loader -->
+    <div class="page-loader" id="pageLoader">
+        <div class="loader-spinner"></div>
+        <div class="loader-text">Загрузка системы...</div>
+    </div>
+
+    <!-- Particles -->
+    <canvas id="particles-canvas"></canvas>
+
+    <!-- AUTH PAGE -->
+    <div class="page auth-page active" id="authPage">
+        <div class="auth-orb auth-orb-1"></div>
+        <div class="auth-orb auth-orb-2"></div>
+        <div class="page-content">
+            <div class="auth-container">
+                <div class="auth-logo">
+                    <div class="auth-logo-icon">🅿️</div>
+                    <h1>ПРПП</h1>
+                    <p>Парковочное пространство</p>
+                </div>
+                <div class="auth-card fade-in">
+                    <h2>Вход в систему</h2>
+                    <p class="auth-subtitle">Введите учётные данные для доступа</p>
+                    <div class="auth-error" id="authError">
+                        <span>⚠️</span>
+                        <span id="authErrorText">Неверный логин или пароль</span>
+                    </div>
+                    <form onsubmit="handleLogin(event)">
+                        <div class="form-group">
+                            <label class="form-label">Логин</label>
+                            <input type="text" class="form-input" id="loginUsername" placeholder="Введите логин" autocomplete="username">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Пароль</label>
+                            <input type="password" class="form-input" id="loginPassword" placeholder="Введите пароль" autocomplete="current-password">
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="loginBtn">Войти</button>
+                    </form>
+                    <p style="text-align:center; margin-top:20px; font-size:0.8rem; color:var(--text-muted);">Демо: admin / admin123</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DASHBOARD PAGE -->
+    <div class="page dashboard-page" id="dashboardPage">
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="topbar-logo">🅿️</div>
+                <span class="topbar-title">ПРПП</span>
+            </div>
+            <div class="topbar-right">
+                <div class="topbar-user">
+                    <div class="topbar-avatar" id="dashAvatar">АД</div>
+                    <span class="topbar-username" id="dashUsername">Администратор</span>
+                </div>
+                <button class="topbar-btn" onclick="navigateTo('admin')" title="Панель управления">⚙️</button>
+                <button class="topbar-btn logout-btn" onclick="handleLogout()" title="Выйти">🚪</button>
+            </div>
+        </div>
+        <div class="dashboard-content">
+            <div class="dashboard-welcome fade-in">
+                <h1>Добро пожаловать в <span class="highlight">ПРПП</span></h1>
+                <p id="welcomeText">Выберите нужный раздел для работы с системой</p>
+            </div>
+            <div class="cards-grid">
+                <a class="choice-card fade-in fade-in-delay-1" id="card1" href="#" target="_blank" onclick="return handleCardClick(0)">
+                    <div class="choice-card-bg"></div>
+                    <div class="choice-card-icon" id="card1Icon">🗺️</div>
+                    <div class="choice-card-title" id="card1Title">Карта развития парковочного пространства</div>
+                    <div class="choice-card-desc" id="card1Desc">Интерактивная карта с визуализацией текущего состояния и планов развития парковочной инфраструктуры города.</div>
+                    <div class="choice-card-link"><span>Перейти</span><span class="choice-card-arrow">→</span></div>
+                    <div class="choice-card-url" id="card1Url">карта.прпп.рф</div>
+                </a>
+                <a class="choice-card fade-in fade-in-delay-2" id="card2" href="#" target="_blank" onclick="return handleCardClick(1)">
+                    <div class="choice-card-bg"></div>
+                    <div class="choice-card-icon" id="card2Icon">🤖</div>
+                    <div class="choice-card-title" id="card2Title">Анализ проектной документации</div>
+                    <div class="choice-card-desc" id="card2Desc">ИИ-система для автоматического анализа и проверки проектной документации с использованием машинного обучения.</div>
+                    <div class="choice-card-link"><span>Перейти</span><span class="choice-card-arrow">→</span></div>
+                    <div class="choice-card-url" id="card2Url">ии.прпп.рф</div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIN PAGE -->
+    <div class="page admin-page" id="adminPage">
+        <div class="topbar">
+            <div class="topbar-left">
+                <div class="topbar-logo">🅿️</div>
+                <span class="topbar-title">ПРПП — CMS</span>
+            </div>
+            <div class="topbar-right">
+                <button class="topbar-btn" onclick="navigateTo('dashboard')" title="На главную">🏠</button>
+                <div class="topbar-user">
+                    <div class="topbar-avatar" id="adminAvatar">АД</div>
+                    <span class="topbar-username" id="adminUsername">Администратор</span>
+                </div>
+                <button class="topbar-btn logout-btn" onclick="handleLogout()" title="Выйти">🚪</button>
+            </div>
+        </div>
+        <div class="admin-layout">
+            <div class="admin-sidebar">
+                <div class="admin-sidebar-logo">
+                    <div class="topbar-logo" style="width:36px;height:36px;font-size:1rem;">🅿️</div>
+                    <span>CMS</span>
+                </div>
+                <ul class="admin-nav">
+                    <li><button class="admin-nav-item active" onclick="switchAdminTab('overview', this)"><span class="nav-icon">📊</span>Обзор</button></li>
+                    <li><button class="admin-nav-item" onclick="switchAdminTab('cards', this)"><span class="nav-icon">🃏</span>Настройка блоков</button></li>
+                    <li><button class="admin-nav-item" onclick="switchAdminTab('users', this)"><span class="nav-icon">👥</span>Пользователи</button></li>
+                    <li><button class="admin-nav-item" onclick="switchAdminTab('settings', this)"><span class="nav-icon">⚙️</span>Настройки</button></li>
+                    <li><button class="admin-nav-item" onclick="switchAdminTab('logs', this)"><span class="nav-icon">📋</span>Журнал</button></li>
+                </ul>
+                <button class="admin-nav-item" onclick="navigateTo('dashboard')" style="margin-top:auto; color:var(--accent-blue);">
+                    <span class="nav-icon">↩️</span>На главную
+                </button>
+            </div>
+            <div class="admin-main">
+                <div class="admin-tab-panel active" id="tab-overview">
+                    <div class="admin-header"><div><h2>Обзор системы</h2><p>Статистика и общая информация</p></div></div>
+                    <div class="admin-cards">
+                        <div class="admin-stat-card"><div class="stat-label">Пользователи</div><div class="stat-value" id="statUsers">3</div><div class="stat-change positive">↑ +1 за месяц</div></div>
+                        <div class="admin-stat-card"><div class="stat-label">Активных блоков</div><div class="stat-value" id="statActiveCards">2</div><div class="stat-change positive">2 из 2</div></div>
+                        <div class="admin-stat-card"><div class="stat-label">Сессия</div><div class="stat-value" style="font-size:1.2rem;" id="statSession">Активна</div><div class="stat-change">Текущий статус</div></div>
+                        <div class="admin-stat-card"><div class="stat-label">Последний вход</div><div class="stat-value" style="font-size:1.2rem;" id="statLastLogin">—</div><div class="stat-change">Время входа</div></div>
+                    </div>
+                    <div class="admin-section"><div class="admin-section-title"><span class="icon">📈</span>Быстрые действия</div>
+                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                            <button class="btn btn-primary btn-sm" onclick="switchAdminTab('cards', document.querySelectorAll('.admin-nav-item')[1])">Редактировать блоки</button>
+                            <button class="btn btn-outline btn-sm" onclick="switchAdminTab('users', document.querySelectorAll('.admin-nav-item')[2])">Управление пользователями</button>
+                            <button class="btn btn-outline btn-sm" onclick="exportConfig()">📥 Экспорт настроек</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="admin-tab-panel" id="tab-cards">
+                    <div class="admin-header"><div><h2>Настройка блоков</h2><p>Редактирование заголовков, описаний и ссылок</p></div></div>
+                    <div class="admin-section">
+                        <div class="admin-section-title"><span class="icon">🗺️</span>Блок 1 — Карта развития</div>
+                        <div class="admin-form-grid">
+                            <div class="admin-form-group"><label class="form-label">Иконка (emoji)</label><input type="text" class="form-input" id="adminCard1Icon" value="🗺️" maxlength="4"></div>
+                            <div class="admin-form-group"><label class="form-label">URL (ссылка)</label><input type="text" class="form-input" id="adminCard1Url" value="https://карта.прпп.рф"></div>
+                            <div class="admin-form-group admin-form-full"><label class="form-label">Заголовок</label><input type="text" class="form-input" id="adminCard1Title" value="Карта развития парковочного пространства"></div>
+                            <div class="admin-form-group admin-form-full"><label class="form-label">Описание</label><textarea class="form-input form-textarea" id="adminCard1Desc">Интерактивная карта с визуализацией текущего состояния и планов развития парковочной инфраструктуры города.</textarea></div>
+                        </div>
+                        <div class="admin-form-actions"><button class="btn btn-primary btn-sm" onclick="saveCardSettings(1)">💾 Сохранить</button></div>
+                    </div>
+                    <div class="admin-section">
+                        <div class="admin-section-title"><span class="icon">🤖</span>Блок 2 — Анализ документации</div>
+                        <div class="admin-form-grid">
+                            <div class="admin-form-group"><label class="form-label">Иконка (emoji)</label><input type="text" class="form-input" id="adminCard2Icon" value="🤖" maxlength="4"></div>
+                            <div class="admin-form-group"><label class="form-label">URL (ссылка)</label><input type="text" class="form-input" id="adminCard2Url" value="https://ии.прпп.рф"></div>
+                            <div class="admin-form-group admin-form-full"><label class="form-label">Заголовок</label><input type="text" class="form-input" id="adminCard2Title" value="Анализ проектной документации"></div>
+                            <div class="admin-form-group admin-form-full"><label class="form-label">Описание</label><textarea class="form-input form-textarea" id="adminCard2Desc">ИИ-система для автоматического анализа и проверки проектной документации с использованием машинного обучения.</textarea></div>
+                        </div>
+                        <div class="admin-form-actions"><button class="btn btn-primary btn-sm" onclick="saveCardSettings(2)">💾 Сохранить</button></div>
+                    </div>
+                    <div class="admin-section">
+                        <div class="admin-section-title"><span class="icon">✏️</span>Приветственный текст</div>
+                        <div class="admin-form-grid">
+                            <div class="admin-form-group admin-form-full"><label class="form-label">Текст под заголовком</label><input type="text" class="form-input" id="adminWelcomeText" value="Выберите нужный раздел для работы с системой"></div>
+                        </div>
+                        <div class="admin-form-actions"><button class="btn btn-primary btn-sm" onclick="saveWelcomeText()">💾 Сохранить</button></div>
+                    </div>
+                </div>
+                <div class="admin-tab-panel" id="tab-users">
+                    <div class="admin-header"><div><h2>Пользователи</h2><p>Управление учётными записями</p></div>
+                        <button class="btn btn-primary btn-sm" onclick="openAddUserModal()">+ Добавить пользователя</button>
+                    </div>
+                    <div class="admin-section" style="padding:0; overflow:hidden;">
+                        <table class="admin-table">
+                            <thead><tr><th>Пользователь</th><th>Роль</th><th>Статус</th><th>Последний вход</th><th>Действия</th></tr></thead>
+                            <tbody id="usersTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="admin-tab-panel" id="tab-settings">
+                    <div class="admin-header"><div><h2>Настройки системы</h2><p>Общие параметры платформы</p></div></div>
+                    <div class="admin-section">
+                        <div class="admin-section-title"><span class="icon">🔐</span>Безопасность</div>
+                        <div style="display:flex; flex-direction:column; gap:20px;">
+                            <div class="toggle-wrap" onclick="toggleSetting(this)"><div class="toggle active"></div><span class="toggle-label">Обязательная авторизация</span></div>
+                            <div class="toggle-wrap" onclick="toggleSetting(this)"><div class="toggle"></div><span class="toggle-label">Ограничение одновременных сессий</span></div>
+                            <div class="toggle-wrap" onclick="toggleSetting(this)"><div class="toggle active"></div><span class="toggle-label">Ведение журнала действий</span></div>
+                        </div>
+                    </div>
+                    <div class="admin-section">
+                        <div class="admin-section-title"><span class="icon">🎨</span>Внешний вид</div>
+                        <div class="admin-form-grid">
+                            <div class="admin-form-group"><label class="form-label">Название системы</label><input type="text" class="form-input" id="systemName" value="ПРПП"></div>
+                            <div class="admin-form-group"><label class="form-label">Название для title</label><input type="text" class="form-input" id="systemTitle" value="ПРПП — Парковочное пространство"></div>
+                        </div>
+                        <div class="admin-form-actions"><button class="btn btn-primary btn-sm" onclick="saveSystemSettings()">💾 Сохранить</button></div>
+                    </div>
+                    <div class="admin-section">
+                        <div class="admin-section-title"><span class="icon">⚠️</span>Опасная зона</div>
+                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                            <button class="btn btn-danger btn-sm" onclick="resetAllSettings()">🔄 Сбросить настройки</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="admin-tab-panel" id="tab-logs">
+                    <div class="admin-header"><div><h2>Журнал действий</h2><p>История изменений и входов</p></div>
+                        <button class="btn btn-outline btn-sm" onclick="clearLogs()">🗑️ Очистить</button>
+                    </div>
+                    <div class="admin-section">
+                        <div class="activity-list" id="activityList"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add User Modal -->
+    <div class="modal-overlay" id="addUserModal">
+        <div class="modal">
+            <div class="modal-title">Добавить пользователя</div>
+            <div class="modal-desc">Заполните данные для создания новой учётной записи</div>
+            <form onsubmit="addUser(event)">
+                <div class="form-group"><label class="form-label">Логин</label><input type="text" class="form-input" id="newUsername" placeholder="Придумайте логин" required></div>
+                <div class="form-group"><label class="form-label">Пароль</label><input type="password" class="form-input" id="newPassword" placeholder="Придумайте пароль" required></div>
+                <div class="form-group"><label class="form-label">Имя</label><input type="text" class="form-input" id="newFullname" placeholder="Полное имя" required></div>
+                <div class="form-group"><label class="form-label">Роль</label><select class="form-input" id="newRole"><option value="user">Пользователь</option><option value="admin">Администратор</option></select></div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline btn-sm" onclick="closeAddUserModal()">Отмена</button>
+                    <button type="submit" class="btn btn-primary btn-sm">Создать</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast" id="toast">
+        <span class="toast-icon" id="toastIcon">✅</span>
+        <span id="toastText">Сохранено!</span>
+    </div>
+
+    <script>
+        // Safe storage helpers
+        const safeStorage = {
+            getItem: (key) => { try { return localStorage.getItem(key); } catch(e) { return null; } },
+            setItem: (key, val) => { try { localStorage.setItem(key, val); } catch(e) { console.warn('Storage blocked'); } },
+            getSession: (key) => { try { return sessionStorage.getItem(key); } catch(e) { return null; } },
+            setSession: (key, val) => { try { sessionStorage.setItem(key, val); } catch(e) { console.warn('Session storage blocked'); } },
+            clearSession: () => { try { sessionStorage.removeItem('prpp_session'); } catch(e) {} }
+        };
+
+        const DEFAULT_CONFIG = {
+            users: [
+                { id: 1, username: 'admin', password: 'admin123', name: 'Администратор', role: 'admin', status: 'active', lastLogin: null },
+                { id: 2, username: 'manager', password: 'manager123', name: 'Менеджер', role: 'user', status: 'active', lastLogin: null },
+                { id: 3, username: 'analyst', password: 'analyst123', name: 'Аналитик', role: 'user', status: 'inactive', lastLogin: null }
+            ],
+            cards: [
+                { id: 1, icon: '🗺️', title: 'Карта развития парковочного пространства', desc: 'Интерактивная карта с визуализацией текущего состояния и планов развития парковочной инфраструктуры города.', url: 'https://карта.прпп.рф', displayUrl: 'карта.прпп.рф', active: true },
+                { id: 2, icon: '🤖', title: 'Анализ проектной документации', desc: 'ИИ-система для автоматического анализа и проверки проектной документации с использованием машинного обучения.', url: 'https://ии.прпп.рф', displayUrl: 'ии.прпп.рф', active: true }
+            ],
+            welcomeText: 'Выберите нужный раздел для работы с системой',
+            systemName: 'ПРПП',
+            systemTitle: 'ПРПП — Парковочное пространство',
+            logs: []
+        };
+
+        let config;
+        let currentUser = null;
+        let currentPage = 'auth';
+
+        function loadConfig() {
+            const saved = safeStorage.getItem('prpp_config');
+            config = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+            for (const key in DEFAULT_CONFIG) {
+                if (!(key in config)) config[key] = DEFAULT_CONFIG[key];
+            }
+        }
+
+        function saveConfig() {
+            safeStorage.setItem('prpp_config', JSON.stringify(config));
+        }
+
+        function addLog(action, type = 'blue') {
+            config.logs.unshift({ action, type, time: new Date().toLocaleString('ru-RU') });
+            if (config.logs.length > 50) config.logs = config.logs.slice(0, 50);
+            saveConfig();
+        }
+
+        function hideLoader() {
+            const el = document.getElementById('pageLoader');
+            if (el) el.classList.add('hidden');
+        }
+
+        function init() {
+            try {
+                loadConfig();
+                const session = safeStorage.getSession('prpp_session');
+                if (session) {
+                    currentUser = JSON.parse(session);
+                    updateDashboard();
+                    navigateTo('dashboard');
+                } else {
+                    navigateTo('auth');
+                }
+                initParticles();
+            } catch (err) {
+                console.error('Init error:', err);
+            } finally {
+                hideLoader();
+            }
+        }
+
+        // Guarantee loader hides
+        window.addEventListener('load', () => setTimeout(hideLoader, 600));
+        window.addEventListener('DOMContentLoaded', () => setTimeout(hideLoader, 800));
+
+        function navigateTo(page) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            currentPage = page;
+            if (page === 'auth') document.getElementById('authPage')?.classList.add('active');
+            else if (page === 'dashboard') {
+                document.getElementById('dashboardPage')?.classList.add('active');
+                updateDashboard();
+            } else if (page === 'admin') {
+                if (!currentUser || currentUser.role !== 'admin') {
+                    showToast('Доступ только для администраторов', 'error');
+                    return;
+                }
+                document.getElementById('adminPage')?.classList.add('active');
+                updateAdminPanel();
+            }
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const errorEl = document.getElementById('authError');
+            const btn = document.getElementById('loginBtn');
+
+            btn.textContent = 'Вход...';
+            btn.disabled = true;
+
+            setTimeout(() => {
+                const user = config.users.find(u => u.username === username && u.password === password);
+                if (user) {
+                    if (user.status === 'inactive') {
+                        errorEl.classList.add('show');
+                        document.getElementById('authErrorText').textContent = 'Учётная запись заблокирована';
+                        btn.textContent = 'Войти'; btn.disabled = false; return;
+                    }
+                    currentUser = user;
+                    user.lastLogin = new Date().toLocaleString('ru-RU');
+                    saveConfig();
+                    safeStorage.setSession('prpp_session', JSON.stringify(user));
+                    addLog(`Вход пользователя <strong>${user.name}</strong>`, 'green');
+                    errorEl.classList.remove('show');
+                    navigateTo('dashboard');
+                    showToast(`Добро пожаловать, ${user.name}!`);
+                } else {
+                    errorEl.classList.add('show');
+                    document.getElementById('authErrorText').textContent = 'Неверный логин или пароль';
+                    addLog(`Попытка входа: ${username} (неудачная)`, 'orange');
+                }
+                btn.textContent = 'Войти'; btn.disabled = false;
+            }, 500);
+        }
+
+        function handleLogout() {
+            if (currentUser) addLog(`Выход пользователя <strong>${currentUser.name}</strong>`, 'purple');
+            currentUser = null;
+            safeStorage.clearSession();
+            document.getElementById('loginUsername').value = '';
+            document.getElementById('loginPassword').value = '';
+            document.getElementById('authError').classList.remove('show');
+            navigateTo('auth');
+            showToast('Вы вышли из системы');
+        }
+
+        function updateDashboard() {
+            if (!currentUser) return;
+            const initials = currentUser.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+            ['dashAvatar', 'adminAvatar'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = initials; });
+            ['dashUsername', 'adminUsername'].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = currentUser.name; });
+            
+            const wt = document.getElementById('welcomeText'); if(wt) wt.textContent = config.welcomeText;
+
+            config.cards.forEach((card, i) => {
+                const num = i + 1;
+                [`card${num}Icon`, `card${num}Title`, `card${num}Desc`, `card${num}Url`].forEach(id => {
+                    const el = document.getElementById(id); if(el) el.textContent = card[id.replace(`card${num}`, '').toLowerCase()];
+                });
+                const el = document.getElementById(`card${num}`);
+                if(el) {
+                    el.href = card.url;
+                    el.style.opacity = card.active ? '1' : '0.4';
+                    el.style.pointerEvents = card.active ? 'auto' : 'none';
+                }
+            });
+        }
+
+        function handleCardClick(index) {
+            if (!config.cards[index].active) {
+                showToast('Раздел временно недоступен', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        function updateAdminPanel() {
+            renderUsersTable();
+            renderLogs();
+            loadCardSettings();
+            updateStats();
+        }
+
+        function switchAdminTab(tabName, btnEl) {
+            document.querySelectorAll('.admin-tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.admin-nav-item').forEach(b => b.classList.remove('active'));
+            const tab = document.getElementById(`tab-${tabName}`);
+            if(tab) tab.classList.add('active');
+            if(btnEl) btnEl.classList.add('active');
+        }
+
+        function updateStats() {
+            document.getElementById('statUsers').textContent = config.users.length;
+            document.getElementById('statActiveCards').textContent = config.cards.filter(c => c.active).length;
+            if (currentUser?.lastLogin) document.getElementById('statLastLogin').textContent = currentUser.lastLogin;
+        }
+
+        function loadCardSettings() {
+            config.cards.forEach((card, i) => {
+                const num = i + 1;
+                [`adminCard${num}Icon`, `adminCard${num}Url`, `adminCard${num}Title`, `adminCard${num}Desc`].forEach(id => {
+                    const el = document.getElementById(id);
+                    if(el) el.value = card[id.replace('admin', '').replace(num, '').toLowerCase()];
+                });
+            });
+            ['adminWelcomeText', 'systemName', 'systemTitle'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.value = config[id.replace('admin', '').toLowerCase()];
+            });
+        }
+
+        function saveCardSettings(num) {
+            const idx = num - 1;
+            config.cards[idx].icon = document.getElementById(`adminCard${num}Icon`).value;
+            config.cards[idx].url = document.getElementById(`adminCard${num}Url`).value;
+            config.cards[idx].title = document.getElementById(`adminCard${num}Title`).value;
+            config.cards[idx].desc = document.getElementById(`adminCard${num}Desc`).value;
+            saveConfig();
+            addLog(`Обновлён <strong>блок ${num}</strong>`, 'blue');
+            showToast(`Блок ${num} обновлён`);
+            updateDashboard();
+        }
+
+        function saveWelcomeText() {
+            config.welcomeText = document.getElementById('adminWelcomeText').value;
+            saveConfig();
+            addLog('Обновлён <strong>приветственный текст</strong>', 'blue');
+            showToast('Текст обновлён');
+            updateDashboard();
+        }
+
+        function saveSystemSettings() {
+            config.systemName = document.getElementById('systemName').value;
+            config.systemTitle = document.getElementById('systemTitle').value;
+            document.title = config.systemTitle;
+            saveConfig();
+            addLog('Обновлены <strong>системные настройки</strong>', 'blue');
+            showToast('Настройки сохранены');
+        }
+
+        function renderUsersTable() {
+            const tbody = document.getElementById('usersTableBody');
+            if(!tbody) return;
+            const colors = ['var(--gradient-blue)', 'var(--gradient-purple)', 'var(--gradient-green)'];
+            tbody.innerHTML = config.users.map(u => {
+                const initials = u.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+                const color = colors[u.id % colors.length];
+                const isAdmin = u.role === 'admin';
+                const isMe = currentUser && currentUser.id === u.id;
+                return `<tr>
+                    <td><div class="user-badge"><div class="user-badge-avatar" style="background:${color}">${initials}</div><div><div style="font-weight:500;">${u.name}</div><div style="font-size:0.8rem;color:var(--text-muted);">@${u.username}</div></div></div></td>
+                    <td><span class="role-badge ${isAdmin ? 'admin-role' : ''}">${isAdmin ? 'Админ' : 'Пользователь'}</span></td>
+                    <td><span class="status-badge ${u.status === 'active' ? 'status-active' : 'status-inactive'}">${u.status === 'active' ? 'Активен' : 'Заблокирован'}</span></td>
+                    <td style="font-size:0.85rem;color:var(--text-secondary);">${u.lastLogin || '—'}</td>
+                    <td>${!isMe ? `<button class="btn btn-outline btn-sm" style="padding:6px 12px;font-size:0.78rem;" onclick="toggleUserStatus(${u.id})">${u.status === 'active' ? '🔒' : '🔓'}</button> <button class="btn btn-danger btn-sm" style="padding:6px 12px;font-size:0.78rem;" onclick="deleteUser(${u.id})">🗑️</button>` : '<span style="font-size:0.8rem;color:var(--text-muted);">Это вы</span>'}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function toggleUserStatus(userId) {
+            const user = config.users.find(u => u.id === userId);
+            if (user) {
+                user.status = user.status === 'active' ? 'inactive' : 'active';
+                saveConfig();
+                renderUsersTable(); updateStats();
+                addLog(`Статус <strong>${user.name}</strong> изменён на "${user.status}"`, 'orange');
+                showToast(`Статус ${user.name} обновлён`);
+            }
+        }
+
+        function deleteUser(userId) {
+            if (currentUser?.id === userId) return showToast('Нельзя удалить себя', 'error');
+            const user = config.users.find(u => u.id === userId);
+            if (user && confirm(`Удалить пользователя ${user.name}?`)) {
+                config.users = config.users.filter(u => u.id !== userId);
+                saveConfig(); renderUsersTable(); updateStats();
+                addLog(`Пользователь <strong>${user.name}</strong> удалён`, 'orange');
+                showToast('Пользователь удалён');
+            }
+        }
+
+        function openAddUserModal() { document.getElementById('addUserModal')?.classList.add('show'); }
+        function closeAddUserModal() {
+            document.getElementById('addUserModal')?.classList.remove('show');
+            ['newUsername', 'newPassword', 'newFullname'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+        }
+
+        function addUser(e) {
+            e.preventDefault();
+            const username = document.getElementById('newUsername').value.trim();
+            const password = document.getElementById('newPassword').value;
+            const name = document.getElementById('newFullname').value.trim();
+            const role = document.getElementById('newRole').value;
+            if (config.users.find(u => u.username === username)) return showToast('Пользователь уже существует', 'error');
+            config.users.push({ id: Date.now(), username, password, name, role, status: 'active', lastLogin: null });
+            saveConfig(); renderUsersTable(); updateStats(); closeAddUserModal();
+            addLog(`Создан пользователь <strong>${name}</strong>`, 'green');
+            showToast(`Пользователь ${name} создан`);
+        }
+
+        function renderLogs() {
+            const list = document.getElementById('activityList');
+            if(!list) return;
+            if (config.logs.length === 0) { list.innerHTML = '<p style="color:var(--text-muted);text-align:center;padding:40px;">Журнал пуст</p>'; return; }
+            list.innerHTML = config.logs.map(log => `<div class="activity-item"><div class="activity-dot ${log.type}"></div><div><div class="activity-text">${log.action}</div><div class="activity-time">${log.time}</div></div></div>`).join('');
+        }
+
+        function clearLogs() { config.logs = []; saveConfig(); renderLogs(); showToast('Журнал очищен'); }
+        function toggleSetting(wrap) { wrap.querySelector('.toggle')?.classList.toggle('active'); }
+        function resetAllSettings() {
+            if (confirm('Сбросить все настройки к значениям по умолчанию?')) {
+                config = JSON.parse(JSON.stringify(DEFAULT_CONFIG)); saveConfig(); loadCardSettings(); updateDashboard(); updateAdminPanel();
+                addLog('Все настройки <strong>сброшены</strong>', 'orange'); showToast('Настройки сброшены');
+            }
+        }
+
+        function exportConfig() {
+            try {
+                const data = JSON.stringify(config, null, 2);
+                const blob = new Blob([data], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = 'prpp-config.json'; a.click();
+                URL.revokeObjectURL(url);
+                showToast('Конфигурация экспортирована');
+            } catch(e) { showToast('Ошибка экспорта', 'error'); }
+        }
+
+        function showToast(text, type = 'success') {
+            const toast = document.getElementById('toast');
+            const icon = document.getElementById('toastIcon');
+            document.getElementById('toastText').textContent = text;
+            toast.className = `toast ${type} show`;
+            icon.textContent = type === 'success' ? '✅' : '❌';
+            setTimeout(() => toast?.classList.remove('show'), 3500);
+        }
+
+        function initParticles() {
+            const canvas = document.getElementById('particles-canvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            let particles = [];
+            function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+            resize(); window.addEventListener('resize', resize);
+            for (let i = 0; i < 50; i++) {
+                particles.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, size: Math.random() * 1.5 + 0.5, speedX: (Math.random() - 0.5) * 0.3, speedY: (Math.random() - 0.5) * 0.3, opacity: Math.random() * 0.4 + 0.1 });
+            }
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach(p => {
+                    p.x += p.speedX; p.y += p.speedY;
+                    if (p.x < 0 || p.x > canvas.width) p.speedX *= -1;
+                    if (p.y < 0 || p.y > canvas.height) p.speedY *= -1;
+                    ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(79, 172, 254, ${p.opacity})`; ctx.fill();
+                });
+                for (let i = 0; i < particles.length; i++) {
+                    for (let j = i + 1; j < particles.length; j++) {
+                        const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy);
+                        if (dist < 100) {
+                            ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y);
+                            ctx.strokeStyle = `rgba(79, 172, 254, ${0.06 * (1 - dist/100)})`; ctx.lineWidth = 0.5; ctx.stroke();
+                        }
+                    }
+                }
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
+
