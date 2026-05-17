@@ -3,21 +3,68 @@
 ## Overview
 This project is a web-based Geographic Information System (GIS) platform inspired by QGIS functionality with multi-user collaboration capabilities, similar to the example shown at https://sush.nextgis.com/resource/65/display?panel=layers.
 
+## 🚀 Quick Deploy
+
+### One-command deployment:
+
+```bash
+./deploy.sh dev    # For development
+./deploy.sh prod   # For production
+```
+
+### Manual deployment:
+
+```bash
+# 1. Configure environment
+cp .env.example .env
+nano .env  # Edit passwords and settings
+
+# 2. Generate secret key
+openssl rand -hex 32  # Add to .env as SECRET_KEY
+
+# 3. Start all services
+docker-compose up -d --build
+
+# 4. Check status
+docker-compose ps
+
+# 5. View logs
+docker-compose logs -f
+```
+
+## 📍 Access Points
+
+After deployment, services are available at:
+
+- **Frontend**: http://localhost
+- **Backend API**: http://localhost/api
+- **API Documentation**: http://localhost/api/docs
+- **GeoServer**: http://localhost/geoserver (admin / your password from .env)
+- **Database**: localhost:5432 (internal only in production)
+
 ## Architecture
 
 ### Backend (Python/FastAPI + PostgreSQL/PostGIS)
 - **FastAPI**: Modern async web framework for API development
 - **PostgreSQL + PostGIS**: Spatial database for storing geographic data
-- **GeoServer/MapServer**: Map tile server for rendering layers
-- **Celery + Redis**: Task queue for heavy processing operations
+- **GeoServer**: Map tile server for rendering layers (WMS/WFS)
+- **Redis**: Caching and task queue broker
 - **JWT Authentication**: Secure user authentication and authorization
+- **Nginx**: Reverse proxy, load balancing, SSL termination
 
-### Frontend (React + OpenLayers/Leaflet)
-- **React**: Modern UI framework
-- **OpenLayers**: Professional mapping library with full GIS capabilities
-- **Redux**: State management for multi-user synchronization
+### Frontend (React + OpenLayers)
+- **React 18**: Modern UI framework
+- **OpenLayers 7**: Professional mapping library with full GIS capabilities
+- **Redux Toolkit**: State management for multi-user synchronization
 - **WebSocket**: Real-time collaboration features
 - **Material-UI**: Component library for consistent UI
+
+### Infrastructure
+- **Docker & Docker Compose**: Container orchestration
+- **Nginx**: Reverse proxy, static file serving, rate limiting
+- **PostgreSQL + PostGIS**: Spatial database
+- **Redis**: Caching layer
+- **GeoServer**: OGC-compliant map server
 
 ### Database Schema
 - Users and roles management
@@ -82,8 +129,16 @@ This project is a web-based Geographic Information System (GIS) platform inspire
 ├── database/               # Database migrations and scripts
 │   ├── migrations/
 │   └── init.sql
+├── nginx/                  # Nginx configuration
+│   ├── nginx.conf
+│   └── ssl/                # SSL certificates
 ├── docs/                   # Documentation
-└── docker-compose.yml      # Docker orchestration
+│   ├── QUICKSTART.md
+│   ├── DEPLOYMENT.md
+│   └── CI_CD.md
+├── docker-compose.yml      # Docker orchestration
+├── .env.example            # Environment variables template
+└── deploy.sh               # Deployment script
 ```
 
 ## Quick Start
@@ -99,73 +154,87 @@ This project is a web-based Geographic Information System (GIS) platform inspire
 2. Configure environment variables:
    ```bash
    cp .env.example .env
+   # Edit .env with your settings
    ```
 
-3. Start all services:
+3. Generate secret key:
    ```bash
-   docker-compose up -d
+   openssl rand -hex 32
+   # Add to .env as SECRET_KEY
    ```
 
-4. Access the application:
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8000
-   - API Docs: http://localhost:8000/docs
+4. Run deployment script:
+   ```bash
+   ./deploy.sh dev    # For development
+   ./deploy.sh prod   # For production
+   ```
 
-## API Endpoints
+   Or start manually:
+   ```bash
+   docker-compose up -d --build
+   ```
 
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login
-- `POST /api/auth/logout` - Logout
-- `GET /api/auth/me` - Get current user info
+5. Access the application:
+   - Frontend: http://localhost
+   - Backend API: http://localhost/api
+   - API Docs: http://localhost/api/docs
+   - GeoServer: http://localhost/geoserver
 
-### Projects
-- `GET /api/projects` - List all projects
-- `POST /api/projects` - Create new project
-- `GET /api/projects/{id}` - Get project details
-- `PUT /api/projects/{id}` - Update project
-- `DELETE /api/projects/{id}` - Delete project
+## Documentation
 
-### Layers
-- `GET /api/projects/{project_id}/layers` - List layers
-- `POST /api/projects/{project_id}/layers` - Add layer
-- `PUT /api/layers/{id}` - Update layer properties
-- `DELETE /api/layers/{id}` - Remove layer
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Detailed deployment instructions for production
+- **[CI_CD.md](CI_CD.md)** - CI/CD configuration and automation
+- **[docs/QUICKSTART.md](docs/QUICKSTART.md)** - Quick start guide for developers
 
-### Features (Vector Data)
-- `GET /api/layers/{layer_id}/features` - Get features
-- `POST /api/layers/{layer_id}/features` - Create feature
-- `PUT /api/features/{id}` - Update feature
-- `DELETE /api/features/{id}` - Delete feature
+## Security Checklist for Production
 
-### Geoprocessing
-- `POST /api/geoprocess/buffer` - Buffer operation
-- `POST /api/geoprocess/intersect` - Intersect operation
-- `POST /api/geoprocess/union` - Union operation
+- [ ] Change all default passwords in `.env`
+- [ ] Generate secure SECRET_KEY
+- [ ] Configure SSL/TLS certificates
+- [ ] Set up firewall rules
+- [ ] Enable rate limiting (configured in nginx)
+- [ ] Configure regular backups
+- [ ] Set up monitoring and alerts
+- [ ] Update Docker images regularly
+- [ ] Restrict database access to internal network only
+- [ ] Enable audit logging
 
-## Technology Stack
+## Troubleshooting
 
-### Backend
-- Python 3.10+
-- FastAPI
-- SQLAlchemy + GeoAlchemy2
-- PostgreSQL + PostGIS
-- Celery
-- Redis
-- GeoServer
+### Common Issues
 
-### Frontend
-- React 18
-- TypeScript
-- OpenLayers 7
-- Redux Toolkit
-- Material-UI
-- Axios
+**Container won't start:**
+```bash
+docker-compose logs <service_name>
+docker stats  # Check resource usage
+```
 
-### DevOps
-- Docker & Docker Compose
-- Nginx
-- GitHub Actions (CI/CD)
+**Database connection issues:**
+```bash
+docker-compose exec db pg_isready -U qgis_admin
+docker-compose restart db
+```
+
+**GeoServer unavailable:**
+```bash
+docker stats geoserver  # Check memory usage
+# Increase memory allocation if needed
+```
+
+### Support
+
+For issues and questions:
+1. Check logs: `docker-compose logs -f`
+2. Verify environment variables in `.env`
+3. Check port availability
+4. Ensure sufficient system resources (CPU, RAM, disk)
+
+Additional resources:
+- [Docker Compose Documentation](https://docs.docker.com/compose/)
+- [PostGIS Documentation](https://postgis.net/documentation/)
+- [GeoServer Documentation](https://docs.geoserver.org/)
+- [Nginx Documentation](https://nginx.org/en/docs/)
+- [OpenLayers Documentation](https://openlayers.org/doc/)
 
 ## License
 MIT License
