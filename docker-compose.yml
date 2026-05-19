@@ -4,17 +4,19 @@ services:
   # PostgreSQL with PostGIS
   db:
     image: postgis/postgis:15-3.3
+    container_name: qgis_web_db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: gis_platform
+      POSTGRES_USER: ${DB_USER:-qgis_admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change_this_password_in_production}
+      POSTGRES_DB: ${DB_NAME:-gis_platform}
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
-    ports:
-      - "5432:5432"
+    networks:
+      - qgis_network
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-qgis_admin}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -22,10 +24,13 @@ services:
   # Redis for caching and task queues
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
+    container_name: qgis_web_redis
+    command: redis-server --requirepass ${REDIS_PASSWORD:-change_redis_password}
+    networks:
+      - qgis_network
+    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -35,17 +40,19 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
+    container_name: qgis_web_backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=gis_platform
+      - POSTGRES_USER=${DB_USER:-qgis_admin}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-change_this_password_in_production}
+      - POSTGRES_DB=${DB_NAME:-gis_platform}
       - POSTGRES_HOST=db
       - POSTGRES_PORT=5432
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - SECRET_KEY=your-secret-key-change-in-production
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-change_redis_password}
+      - SECRET_KEY=${SECRET_KEY:-generate_secure_random_key_here}
+      - ENVIRONMENT=production
     depends_on:
       db:
         condition: service_healthy
@@ -53,36 +60,68 @@ services:
         condition: service_healthy
     volumes:
       - ./backend/app:/app/app
+      - ./uploads:/app/uploads
+      - ./static:/app/static
+    networks:
+      - qgis_network
+    restart: unless-stopped
 
   # GeoServer for WMS/WFS services
   geoserver:
     image: kartoza/geoserver:2.23.0
+    container_name: qgis_web_geoserver
     environment:
       - BASIC_AUTH=true
-      - GEOSERVER_ADMIN_PASSWORD=geoserver
+      - GEOSERVER_ADMIN_PASSWORD=${GEOSERVER_PASSWORD:-geoserver_secure_pass}
       - GEOSERVER_ADMIN_USER=admin
-    ports:
-      - "8080:8080"
+      - ALLOWED_ORIGINS=http://your-domain.com,https://your-domain.com
     volumes:
       - geoserver_data:/opt/geoserver/data_dir
+      - ./geoserver_plugins:/opt/geoserver/data_dir/plugins
     depends_on:
       - db
+    networks:
+      - qgis_network
+    restart: unless-stopped
 
-  # Frontend (development)
+  # Nginx as reverse proxy and static file server
+  nginx:
+    image: nginx:alpine
+    container_name: qgis_web_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./frontend/build:/usr/share/nginx/html:ro
+      - ./uploads:/var/www/uploads:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - qgis_network
+    restart: unless-stopped
+
+  # Frontend (production build)
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
+    container_name: qgis_web_frontend_build
     environment:
-      - REACT_APP_API_URL=http://localhost:8000
+      - REACT_APP_API_URL=/api
+      - REACT_APP_GEOSERVER_URL=/geoserver
     volumes:
-      - ./frontend/src:/app/src
-      - /app/node_modules
-    depends_on:
-      - backend
+      - ./frontend/build:/app/build
+    command: npm run build
+    networks:
+      - qgis_network
 
 volumes:
   postgres_data:
   geoserver_data:
+
+networks:
+  qgis_network:
+    driver: bridge
